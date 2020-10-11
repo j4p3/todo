@@ -1,4 +1,4 @@
-defmodule Todo
+defmodule Todo do
   defmodule List do
     defstruct id_sequence: 1, entries: %{}
 
@@ -18,14 +18,17 @@ defmodule Todo
     def create(pid, entry) do
       Server.cast(pid, {:create, entry})
     end
+
     @spec update(pid, any, any) :: any
     def update(pid, id, entry) do
       Server.cast(pid, {:update, id, entry})
     end
+
     @spec delete(pid, any) :: any
     def delete(pid, id) do
       Server.cast(pid, {:delete, id})
     end
+
     @spec entries(pid, any) :: [List]
     def entries(pid, date) do
       IO.puts("List received entries()")
@@ -38,9 +41,12 @@ defmodule Todo
 
     def init, do: %List{}
 
-    @spec handle_cast({:create, map} |
-    {:delete, any} |
-    {:update, any, any}, List) :: atom | %{entries: map}
+    @spec handle_cast(
+            {:create, map}
+            | {:delete, any}
+            | {:update, any, any},
+            List
+          ) :: atom | %{entries: map}
     def handle_cast({:create, entry}, todos) do
       entry = Map.put(entry, :id, todos.id_sequence)
 
@@ -90,10 +96,11 @@ defmodule Todo
     end
 
     def handle_call({:entries, date}, todos) do
-      IO.puts("List received handle_call()")
-      entries = todos.entries
-      |> Stream.filter(fn {_, entry} -> entry.date == date end)
-      |> Enum.map(fn {_, entry} -> entry end)
+      entries =
+        todos.entries
+        |> Stream.filter(fn {_, entry} -> entry.date == date end)
+        |> Enum.map(fn {_, entry} -> entry end)
+
       {entries, todos}
     end
   end
