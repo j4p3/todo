@@ -1,4 +1,4 @@
-defmodule Todo.List do
+defmodule TodoUncached.List do
   defstruct id_sequence: 1, entries: %{}
 
   @type todo_list :: %{}
@@ -8,7 +8,7 @@ defmodule Todo.List do
   # Interface functions
   ###################################################################
 
-  @spec start :: pid
+  @spec start :: {atom, pid}
   def start do
     Todo.Server.start(__MODULE__)
   end

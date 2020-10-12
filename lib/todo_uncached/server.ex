@@ -1,4 +1,4 @@
-defmodule Todo.Server do
+defmodule TodoUncached.Server do
   @spec start(atom) :: pid
   def start(callback_module) do
     spawn(fn ->

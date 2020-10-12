@@ -1,10 +1,12 @@
-defmodule TodoCache.Cache do
+defmodule Todo.Cache do
   use GenServer
 
+  @spec start :: :ignore | {:error, any} | {:ok, pid}
   def start do
     GenServer.start(__MODULE__, nil)
   end
 
+  @spec server_process(pid, bitstring) :: any
   def server_process(cache_pid, todo_list_name) do
     GenServer.call(cache_pid, {:server_process, todo_list_name})
   end
@@ -21,7 +23,7 @@ defmodule TodoCache.Cache do
 
       :error ->
         # get or create
-        {:ok, new_server} = TodoCache.Server.start(TodoCache.List)
+        {:ok, new_server} = Todo.Server.start(Todo.List)
         {:reply, new_server, Map.put(todo_servers, todo_list_name, new_server)}
     end
   end

@@ -1,4 +1,4 @@
-defmodule TodoCache.List do
+defmodule Todo.List do
   defstruct id_sequence: 1, entries: %{}
 
   @type todo_list :: %{}
@@ -8,30 +8,30 @@ defmodule TodoCache.List do
   # Interface functions
   ###################################################################
 
-  @spec start :: pid
+  @spec start :: {atom, pid}
   def start do
-    TodoCache.Server.start(__MODULE__)
+    Todo.Server.start(__MODULE__)
   end
 
   @spec create(pid, any) :: any
   def create(pid, entry) do
-    TodoCache.Server.cast(pid, {:create, entry})
+    Todo.Server.cast(pid, {:create, entry})
   end
 
   @spec update(pid, any, any) :: any
   def update(pid, id, entry) do
-    TodoCache.Server.cast(pid, {:update, id, entry})
+    Todo.Server.cast(pid, {:update, id, entry})
   end
 
   @spec delete(pid, any) :: any
   def delete(pid, id) do
-    TodoCache.Server.cast(pid, {:delete, id})
+    Todo.Server.cast(pid, {:delete, id})
   end
 
   @spec entries(pid, any) :: [__MODULE__]
   def entries(pid, date) do
     IO.puts("__MODULE__ received entries()")
-    TodoCache.Server.call(pid, {:entries, date})
+    Todo.Server.call(pid, {:entries, date})
   end
 
   ###################################################################
