@@ -1,4 +1,4 @@
-defmodule Cache do
+defmodule TodoCache.Cache do
   use GenServer
 
   def start do
@@ -10,7 +10,7 @@ defmodule Cache do
   end
 
   def init(_) do
-    %{:ok, %{}}
+    {:ok, %{}}
   end
 
   # handle_call takes request, caller, state
@@ -18,13 +18,11 @@ defmodule Cache do
     case Map.fetch(todo_servers, todo_list_name) do
       {:ok, todo_server} ->
         {:reply, todo_server, todo_servers}
+
       :error ->
         # get or create
-        {:ok, new_server} = Todo.Server.start()
-        {:reply,
-          new_server,
-          Map.put(todo_servers, todo_list_name, new_server)
-        }
+        {:ok, new_server} = TodoCache.Server.start(TodoCache.List)
+        {:reply, new_server, Map.put(todo_servers, todo_list_name, new_server)}
     end
   end
 end
