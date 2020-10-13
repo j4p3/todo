@@ -1,4 +1,7 @@
 defmodule Todo.Database do
+  @moduledoc """
+  Central singleton process for db management. Spawns three workers, maintains mapping, passes DB calls to each.
+  """
   use GenServer
 
   @db_folder "./persist"
@@ -9,44 +12,36 @@ defmodule Todo.Database do
   end
 
   def store(key, data) do
-    GenServer.cast(__MODULE__, {:store, key, data})
+    key |>
+    get_worker() |>
+    Todo.DatabaseWorker.store(key, data)
   end
 
   def get(key) do
-    GenServer.call(__MODULE__, {:get, key})
+    key |>
+    get_worker() |>
+    Todo.DatabaseWorker.get(key)
   end
 
   # Callback
 
   def init(_) do
     File.mkdir_p!(@db_folder)
-    {:ok, nil}
+    {:ok, create_workers()}
   end
 
-  def handle_cast({:store, key, data}) do
-    spawn(fn ->
-      key
-      |> file_name()
-      |> File.write!(:erlang.term_to_binary(data))
-    end)
+  def handle_call({:get_worker, key}, _, workers) do
+    {:reply, Map.get(workers, :erlang.phash(key, 3)), workers}
   end
 
-  def handle_call({:get, key}, caller, state) do
-    spawn(fn ->
-      data =
-        case File.read(file_name(key)) do
-          {:ok, contents} -> :erlang.binary_to_term(contents)
-          _ -> nil
-        end
-
-      {:reply, data, state}
-      GenServer.reply(caller, data)
-    end)
-
-    {:noreply, state}
+  defp get_worker(key) do
+    GenServer.call(__MODULE__, {:get_worker, key})
   end
 
-  defp file_name(key) do
-    Path.join(@db_folder, to_string(key))
+  defp create_workers() do
+    for i <- 0..2, into: %{} do
+      {:ok, pid} = Todo.DatabaseWorker.start(@db_folder)
+      {i, pid}
+    end
   end
 end

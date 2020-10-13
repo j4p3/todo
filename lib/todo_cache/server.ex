@@ -1,6 +1,7 @@
 defmodule Todo.Server do
   use GenServer
 
+  @spec start(any) :: :ignore | {:error, any} | {:ok, pid}
   def start(name) do
     GenServer.start(__MODULE__, name)
   end

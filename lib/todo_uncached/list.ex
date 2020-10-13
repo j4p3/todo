@@ -10,28 +10,28 @@ defmodule TodoUncached.List do
 
   @spec start :: {atom, pid}
   def start do
-    Todo.Server.start(__MODULE__)
+    TodoUncached.Server.start(__MODULE__)
   end
 
   @spec create(pid, any) :: any
   def create(pid, entry) do
-    Todo.Server.cast(pid, {:create, entry})
+    TodoUncached.Server.cast(pid, {:create, entry})
   end
 
   @spec update(pid, any, any) :: any
   def update(pid, id, entry) do
-    Todo.Server.cast(pid, {:update, id, entry})
+    TodoUncached.Server.cast(pid, {:update, id, entry})
   end
 
   @spec delete(pid, any) :: any
   def delete(pid, id) do
-    Todo.Server.cast(pid, {:delete, id})
+    TodoUncached.Server.cast(pid, {:delete, id})
   end
 
   @spec entries(pid, any) :: [__MODULE__]
   def entries(pid, date) do
     IO.puts("__MODULE__ received entries()")
-    Todo.Server.call(pid, {:entries, date})
+    TodoUncached.Server.call(pid, {:entries, date})
   end
 
   ###################################################################
