@@ -4,6 +4,9 @@ defmodule Todo.DatabaseWorker do
   """
 
   # interface
+  # nice to have interface functions here, even though the database could just pass messages directly.
+  # * prevents clients from needing details on implementation
+  # * allows us to encapsulate all worker process message passing internally
   def start(db_folder) do
     GenServer.start(__MODULE__, db_folder)
   end
