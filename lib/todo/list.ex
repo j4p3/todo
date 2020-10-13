@@ -2,6 +2,7 @@ defmodule Todo.List do
   defstruct auto_id: 1, entries: %{}
 
   def new(entries \\ []) do
+    IO.puts("Creating #{__MODULE__}")
     Enum.reduce(
       entries,
       %Todo.List{},
@@ -10,7 +11,7 @@ defmodule Todo.List do
   end
 
   def size(todo_list) do
-    Map.size(todo_list.entries)
+    map_size(todo_list.entries)
   end
 
   def create(todo_list, entry) do

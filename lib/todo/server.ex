@@ -3,6 +3,7 @@ defmodule Todo.Server do
 
   @spec start(any) :: :ignore | {:error, any} | {:ok, pid}
   def start(name) do
+    IO.puts("Starting #{__MODULE__} with name #{name}")
     GenServer.start(__MODULE__, name)
   end
 

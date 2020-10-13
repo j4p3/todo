@@ -8,6 +8,7 @@ defmodule Todo.DatabaseWorker do
   # * prevents clients from needing details on implementation
   # * allows us to encapsulate all worker process message passing internally
   def start(db_folder) do
+    IO.puts("Starting #{__MODULE__}")
     GenServer.start(__MODULE__, db_folder)
   end
 
