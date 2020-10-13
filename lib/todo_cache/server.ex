@@ -1,36 +1,36 @@
 defmodule Todo.Server do
-  def start(callback_module) do
-    {:ok,
-     spawn(fn ->
-       initial_state = callback_module.init()
-       loop(callback_module, initial_state)
-     end)}
+  use GenServer
+
+  def start(name) do
+    GenServer.start(__MODULE__, name)
   end
 
-  @spec call(pid, any) :: any
-  def call(server_pid, request) do
-    send(server_pid, {:call, request, self()})
-
-    receive do
-      {:response, response} -> response
-    end
+  def create(todo_server, new_entry) do
+    GenServer.cast(todo_server, {:create, new_entry})
   end
 
-  @spec cast(pid, any) :: any
-  def cast(server_pid, request) do
-    send(server_pid, {:cast, request})
+  def entries(todo_server, date) do
+    GenServer.call(todo_server, {:entries, date})
   end
 
-  defp loop(callback_module, current_state) do
-    receive do
-      {:call, request, caller} ->
-        {response, new_state} = callback_module.handle_call(request, current_state)
-        send(caller, {:response, response})
-        loop(callback_module, new_state)
+  @impl GenServer
+  def init(name) do
+    {:ok, {name, Todo.Database.get(name) || Todo.List.new()}}
+  end
 
-      {:cast, request} ->
-        new_state = callback_module.handle_cast(request, current_state)
-        loop(callback_module, new_state)
-    end
+  @impl GenServer
+  def handle_cast({:create, new_entry}, {name, todo_list}) do
+    new_state = Todo.List.create(todo_list, new_entry)
+    Todo.Database.store(name, new_state)
+    {:noreply, {name, new_state}}
+  end
+
+  @impl GenServer
+  def handle_call({:entries, date}, _, {name, todo_list}) do
+    {
+      :reply,
+      Todo.List.entries(todo_list, date),
+      {name, todo_list}
+    }
   end
 end

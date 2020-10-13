@@ -3,6 +3,7 @@ defmodule Todo.Cache do
 
   @spec start :: :ignore | {:error, any} | {:ok, pid}
   def start do
+    Todo.Database.start()
     GenServer.start(__MODULE__, nil)
   end
 
@@ -23,7 +24,7 @@ defmodule Todo.Cache do
 
       :error ->
         # get or create
-        {:ok, new_server} = Todo.Server.start(Todo.List)
+        {:ok, new_server} = Todo.Server.start(todo_list_name)
         {:reply, new_server, Map.put(todo_servers, todo_list_name, new_server)}
     end
   end

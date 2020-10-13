@@ -1,105 +1,48 @@
 defmodule Todo.List do
-  defstruct id_sequence: 1, entries: %{}
+  defstruct auto_id: 1, entries: %{}
 
-  @type todo_list :: %{}
-  @type entry :: %{date: Date, message: charlist}
-
-  ###################################################################
-  # Interface functions
-  ###################################################################
-
-  @spec start :: {atom, pid}
-  def start do
-    Todo.Server.start(__MODULE__)
+  def new(entries \\ []) do
+    Enum.reduce(
+      entries,
+      %Todo.List{},
+      &create(&2, &1)
+    )
   end
 
-  @spec create(pid, any) :: any
-  def create(pid, entry) do
-    Todo.Server.cast(pid, {:create, entry})
+  def size(todo_list) do
+    Map.size(todo_list.entries)
   end
 
-  @spec update(pid, any, any) :: any
-  def update(pid, id, entry) do
-    Todo.Server.cast(pid, {:update, id, entry})
+  def create(todo_list, entry) do
+    entry = Map.put(entry, :id, todo_list.auto_id)
+    new_entries = Map.put(todo_list.entries, todo_list.auto_id, entry)
+
+    %Todo.List{todo_list | entries: new_entries, auto_id: todo_list.auto_id + 1}
   end
 
-  @spec delete(pid, any) :: any
-  def delete(pid, id) do
-    Todo.Server.cast(pid, {:delete, id})
+  def entries(todo_list, date) do
+    todo_list.entries
+    |> Stream.filter(fn {_, entry} -> entry.date == date end)
+    |> Enum.map(fn {_, entry} -> entry end)
   end
 
-  @spec entries(pid, any) :: [__MODULE__]
-  def entries(pid, date) do
-    IO.puts("__MODULE__ received entries()")
-    Todo.Server.call(pid, {:entries, date})
+  def update(todo_list, %{} = new_entry) do
+    update(todo_list, new_entry.id, fn _ -> new_entry end)
   end
 
-  ###################################################################
-  # Callback functions
-  ###################################################################
-
-  def init, do: %__MODULE__{}
-
-  @spec handle_cast(
-          {:create, map}
-          | {:delete, any}
-          | {:update, any, any},
-          __MODULE__
-        ) :: atom | %{entries: map}
-  def handle_cast({:create, entry}, todos) do
-    entry = Map.put(entry, :id, todos.id_sequence)
-
-    entries =
-      Map.put(
-        todos.entries,
-        todos.id_sequence,
-        entry
-      )
-
-    %__MODULE__{
-      todos
-      | entries: entries,
-        id_sequence: todos.id_sequence + 1
-    }
-  end
-
-  def handle_cast({:update, id, update_body}, todos) do
-    case Map.fetch(todos.entries, id) do
+  def update(todo_list, entry_id, updater_fun) do
+    case Map.fetch(todo_list.entries, entry_id) do
       :error ->
-        todos
+        todo_list
 
-      {:ok, existing_entry} ->
-        new_entry =
-          Enum.reduce(
-            update_body,
-            existing_entry,
-            fn {k, v}, acc ->
-              %{acc | k => v}
-            end
-          )
-
-        entries =
-          Map.put(
-            todos.entries,
-            new_entry.id,
-            new_entry
-          )
-
-        %__MODULE__{todos | entries: entries}
+      {:ok, old_entry} ->
+        new_entry = updater_fun.(old_entry)
+        new_entries = Map.put(todo_list.entries, new_entry.id, new_entry)
+        %Todo.List{todo_list | entries: new_entries}
     end
   end
 
-  def handle_cast({:delete, id}, todos) do
-    {_, updated} = Map.pop(todos.entries, id)
-    %__MODULE__{todos | entries: updated}
-  end
-
-  def handle_call({:entries, date}, todos) do
-    entries =
-      todos.entries
-      |> Stream.filter(fn {_, entry} -> entry.date == date end)
-      |> Enum.map(fn {_, entry} -> entry end)
-
-    {entries, todos}
+  def delete(todo_list, entry_id) do
+    %Todo.List{todo_list | entries: Map.delete(todo_list.entries, entry_id)}
   end
 end
