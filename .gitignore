@@ -23,3 +23,7 @@
 */**/todo-*.tar
 
 */**/persist/*
+
+.elixir_ls
+
+**/*/.elixir_ls
