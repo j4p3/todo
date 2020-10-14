@@ -2,7 +2,11 @@ defmodule Todo.System do
   @spec start_link :: {:error, any} | {:ok, pid}
   def start_link do
     Supervisor.start_link(
-      [Todo.Cache, Todo.Database],
+      [
+        Todo.ProcessRegistry,
+        Todo.Cache,
+        Todo.Database
+      ],
       strategy: :one_for_one
     )
   end
