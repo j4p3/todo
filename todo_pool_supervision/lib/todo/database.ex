@@ -1,15 +1,26 @@
 defmodule Todo.Database do
   @moduledoc """
-  Central singleton process for db management. Spawns three workers, maintains mapping, passes DB calls to each.
+  Central singleton process for db management. Spawns three workers, passes DB calls to each.
+  Mapping is no longer maintained by a looping server call - instead, creates a registry.
   """
-  use GenServer
 
+  @pool_size 3
   @db_folder "./persist"
 
   # Interface
-  def start_link(_) do
+  def start_link() do
     IO.puts("Starting #{__MODULE__}")
-    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+    Enum.map(1..@pool_size, &worker_spec/1) |>
+    IO.inspect |> # todo - what's going on here?
+    Supervisor.start_link(strategy: :one_for_one)
+  end
+
+  def child_spec(_) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, []},
+      type: :supervisor  # default type is always worker, supervisor type enables supervision tree
+    }
   end
 
   def store(key, data) do
@@ -26,23 +37,12 @@ defmodule Todo.Database do
 
   # Callback
 
-  def init(_) do
-    File.mkdir_p!(@db_folder)
-    {:ok, create_workers()}
-  end
-
-  def handle_call({:get_worker, key}, _, workers) do
-    {:reply, Map.get(workers, :erlang.phash(key, 3)), workers}
-  end
-
   defp get_worker(key) do
-    GenServer.call(__MODULE__, {:get_worker, key})
+    :erlang.phash(key, @pool_size) + 1
   end
 
-  defp create_workers() do
-    for i <- 0..2, into: %{} do
-      {:ok, pid} = Todo.DatabaseWorker.start(@db_folder)
-      {i, pid}
-    end
+  defp worker_spec(worker_id) do
+    {Todo.DatabaseWorker, {@db_folder, worker_id}} |>
+    Supervisor.child_spec(id: worker_id)
   end
 end
