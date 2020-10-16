@@ -1,4 +1,6 @@
 defmodule Todo.DatabaseWorker do
+  use GenServer
+
   @moduledoc """
   Performs DB reads & writes, returns status to caller (central DB module).
   This version lists itself on a registry, then calls that registry from
@@ -16,13 +18,6 @@ defmodule Todo.DatabaseWorker do
       db_folder,
       name: via_tuple(worker_id)
     )
-  end
-
-  def child_spec(_) do
-    %{
-      id: __MODULE__,
-      start: {__MODULE__, :start_link, []},
-    }
   end
 
   def store(worker_id, key, data) do

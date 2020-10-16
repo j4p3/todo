@@ -10,11 +10,15 @@ defmodule Todo.Database do
   # Interface
   def start_link() do
     IO.puts("Starting #{__MODULE__}")
+
     Enum.map(1..@pool_size, &worker_spec/1) |>
-    IO.inspect |> # todo - what's going on here?
     Supervisor.start_link(strategy: :one_for_one)
   end
 
+  @doc """
+  child_spec lets the module specify its own config for being launched by a supervisor,
+  rather than defining it in the parent module.
+  """
   def child_spec(_) do
     %{
       id: __MODULE__,
