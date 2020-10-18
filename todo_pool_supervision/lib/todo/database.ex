@@ -10,14 +10,16 @@ defmodule Todo.Database do
   # Interface
   def start_link() do
     IO.puts("Starting #{__MODULE__}")
+    File.mkdir_p!(@db_folder)
 
-    Enum.map(1..@pool_size, &worker_spec/1) |>
-    Supervisor.start_link(strategy: :one_for_one)
+    workers = Enum.map(1..@pool_size, &worker_spec/1)
+    Supervisor.start_link(workers, strategy: :one_for_one)
   end
 
   @doc """
   child_spec lets the module specify its own config for being launched by a supervisor,
-  rather than defining it in the parent module.
+  rather than defining it in the parent module. (GenServer generates a default :worker spec,
+  but the database is no longer keeping state in a server - that's now in the registry.)
   """
   def child_spec(_) do
     %{
@@ -46,7 +48,7 @@ defmodule Todo.Database do
   end
 
   defp worker_spec(worker_id) do
-    {Todo.DatabaseWorker, {@db_folder, worker_id}} |>
-    Supervisor.child_spec(id: worker_id)
+    worker_spec = {Todo.DatabaseWorker, {@db_folder, worker_id}}
+    Supervisor.child_spec(worker_spec, id: worker_id)
   end
 end
