@@ -2,7 +2,7 @@ defmodule Todo.Server do
   use GenServer, restart: :temporary
 
   @spec start(any) :: :ignore | {:error, any} | {:ok, pid}
-  def start_link(name) do
+  def start(name) do
     IO.puts("Starting #{__MODULE__} with name #{name}")
     GenServer.start(__MODULE__, name, name: via_tuple(name))
   end

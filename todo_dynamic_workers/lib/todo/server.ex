@@ -1,10 +1,19 @@
 defmodule Todo.Server do
+  @moduledoc """
+  Not restarted with :temporary strategy
+  Useful to not hit the supervisor's restart threshold
+  Todo servers would be restarted on the next cache request anyway
+  """
   use GenServer, restart: :temporary
 
-  @spec start(any) :: :ignore | {:error, any} | {:ok, pid}
+  @doc """
+  This is where the server de-duping is actually happening.
+  When a request comes in to cache, it attempts to start a server for the given name.
+  GenServer.start_link returns an error code, since it's a duplicate, and we handle that in cache.
+  """
+  @spec start_link(any) :: :ignore | {:error, any} | {:ok, pid}
   def start_link(name) do
-    IO.puts("Starting #{__MODULE__} with name #{name}")
-    GenServer.start(__MODULE__, name, name: via_tuple(name))
+    GenServer.start_link(Todo.Server, name, name: via_tuple(name))
   end
 
   def create(todo_server, new_entry) do
@@ -17,6 +26,7 @@ defmodule Todo.Server do
 
   @impl GenServer
   def init(name) do
+    IO.puts("Starting #{__MODULE__} with name #{name}")
     {:ok, {name, Todo.Database.get(name) || Todo.List.new()}}
   end
 
