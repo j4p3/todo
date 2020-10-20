@@ -49,6 +49,6 @@ defmodule Todo.Database do
 
   defp worker_spec(worker_id) do
     worker_spec = {Todo.DatabaseWorker, {@db_folder, worker_id}}
-    Supervisor.child_spec(worker_spec, id: worker_id)
+    Supervisor.child_spec(worker_spec, id: worker_id)  # Why call Supervisor function here rather than worker child_spec method?
   end
 end

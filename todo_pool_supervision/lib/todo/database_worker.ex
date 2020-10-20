@@ -13,7 +13,7 @@ defmodule Todo.DatabaseWorker do
   # * allows us to encapsulate all worker process message passing internally
   def start_link({db_folder, worker_id}) do
     IO.puts("Starting #{__MODULE__} #{worker_id}")
-    GenServer.start(
+    GenServer.start_link(
       __MODULE__,
       db_folder,
       name: via_tuple(worker_id)
