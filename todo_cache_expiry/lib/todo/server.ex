@@ -1,40 +1,53 @@
 defmodule Todo.Server do
   @moduledoc """
-  Uses agent rather than genserver.
-  Tidies things up a bit - no need for interface function to cast,
-  Then implementation function to handle cast.
-  Just pass the impl to the agent right from the interface function.
+
   """
-  use Agent, restart: :temporary
+  use GenServer, restart: :temporary
+  @idle_timeout :timer.seconds(30)
 
   @doc """
+
   """
   @spec start_link(any) :: :ignore | {:error, any} | {:ok, pid}
   def start_link(name) do
-    Agent.start_link(
-      fn ->
-        IO.puts("Starting #{__MODULE__} with name #{name}")
-        {name, Todo.Database.get(name) || Todo.List.new()}
-      end
-    )
+    GenServer.start_link(Todo.Server, name, name: via_tuple(name))
   end
 
   def create(todo_server, new_entry) do
-    Agent.cast(
-      todo_server, fn {name, todo_list} ->
-        new_state = Todo.List.create(todo_list, new_entry)
-        Todo.Database.store(name, new_state)
-        {name, new_state}
-      end
-    )
+    GenServer.cast(todo_server, {:create, new_entry})
   end
 
   def entries(todo_server, date) do
-    Agent.get(
-      todo_server, fn date ->
-        Todo.List.entries(todo_list, date)
-      end
-    )
+    GenServer.call(todo_server, {:entries, date})
+  end
+
+  @impl GenServer
+  def init(name) do
+    IO.puts("Starting #{__MODULE__} with name #{name}")
+    {:ok, {name, Todo.Database.get(name) || Todo.List.new()}, @idle_timeout}
+  end
+
+  @impl GenServer
+  def handle_cast({:create, new_entry}, {name, todo_list}) do
+    new_state = Todo.List.create(todo_list, new_entry)
+    Todo.Database.store(name, new_state)
+    {:noreply, {name, new_state}, @idle_timeout}
+  end
+
+  @impl GenServer
+  def handle_call({:entries, date}, _, {name, todo_list}) do
+    {
+      :reply,
+      Todo.List.entries(todo_list, date),
+      {name, todo_list},
+      @idle_timeout
+    }
+  end
+
+  @impl GenServer
+  def handle_info(:timeout, {name, todo_list}) do
+    IO.puts("Stopping #{__MODULE__} with name #{name}")
+    {:stop, :normal, {name, todo_list}}
   end
 
   defp via_tuple(name) do
