@@ -13,8 +13,8 @@ defmodule Todo.Server do
     GenServer.start_link(Todo.Server, name, name: via_tuple(name))
   end
 
-  def create(todo_server, new_entry) do
-    GenServer.cast(todo_server, {:create, new_entry})
+  def add_entry(todo_server, new_entry) do
+    GenServer.cast(todo_server, {:add_entry, new_entry})
   end
 
   def entries(todo_server, date) do
@@ -28,8 +28,8 @@ defmodule Todo.Server do
   end
 
   @impl GenServer
-  def handle_cast({:create, new_entry}, {name, todo_list}) do
-    new_state = Todo.List.create(todo_list, new_entry)
+  def handle_cast({:add_entry, new_entry}, {name, todo_list}) do
+    new_state = Todo.List.add_entry(todo_list, new_entry)
     Todo.Database.store(name, new_state)
     {:noreply, {name, new_state}, @idle_timeout}
   end

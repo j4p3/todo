@@ -22,7 +22,7 @@ defmodule Todo.Database do
       [
         name: {:local, __MODULE__},  # register locally to avoid needing pid
         worker_module: Todo.DatabaseWorker,
-        size: 3
+        size: @pool_size
       ],
       # Arg 3: list of options passed to worker start_link
       [@db_folder]
