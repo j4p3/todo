@@ -18,7 +18,7 @@ defmodule Todo.Web do
 
     list_name = Map.fetch!(conn.params, "list")
     entry = %{
-      date: Map.fetch!(conn.params, "date"),
+      date: Date.from_iso8601!(Map.fetch!(conn.params, "date")),
       title: Map.fetch!(conn.params, "title")
     }
 
@@ -45,7 +45,7 @@ defmodule Todo.Web do
     |> Enum.join("\n")
 
     conn
-    |> Plug.Conn.put_resp_content_type(conn, "text/plain")
+    |> Plug.Conn.put_resp_content_type("text/plain")
     |> Plug.Conn.send_resp(200, entries)
 
   end
