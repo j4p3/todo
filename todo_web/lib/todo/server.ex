@@ -3,7 +3,6 @@ defmodule Todo.Server do
 
   """
   use GenServer, restart: :temporary
-  @idle_timeout :timer.seconds(30)
 
   @doc """
 
@@ -24,14 +23,14 @@ defmodule Todo.Server do
   @impl GenServer
   def init(name) do
     IO.puts("Starting #{__MODULE__} with name #{name}")
-    {:ok, {name, Todo.Database.get(name) || Todo.List.new()}, @idle_timeout}
+    {:ok, {name, Todo.Database.get(name) || Todo.List.new()}, expiry_idle_timeout()}
   end
 
   @impl GenServer
   def handle_cast({:add_entry, new_entry}, {name, todo_list}) do
     new_state = Todo.List.add_entry(todo_list, new_entry)
     Todo.Database.store(name, new_state)
-    {:noreply, {name, new_state}, @idle_timeout}
+    {:noreply, {name, new_state}, expiry_idle_timeout()}
   end
 
   @impl GenServer
@@ -40,7 +39,7 @@ defmodule Todo.Server do
       :reply,
       Todo.List.entries(todo_list, date),
       {name, todo_list},
-      @idle_timeout
+      expiry_idle_timeout()
     }
   end
 
@@ -53,4 +52,6 @@ defmodule Todo.Server do
   defp via_tuple(name) do
     Todo.ProcessRegistry.via_tuple({__MODULE__, name})
   end
+
+  defp expiry_idle_timeout(), do: Application.fetch_env!(:todo, :todo_item_expiry)
 end
