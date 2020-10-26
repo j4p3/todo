@@ -9,7 +9,7 @@ defmodule Todo.Server do
   """
   @spec start_link(any) :: :ignore | {:error, any} | {:ok, pid}
   def start_link(name) do
-    GenServer.start_link(Todo.Server, name, name: via_tuple(name))
+    GenServer.start_link(Todo.Server, name, name: global_name(name))
   end
 
   def add_entry(todo_server, new_entry) do
@@ -49,8 +49,15 @@ defmodule Todo.Server do
     {:stop, :normal, {name, todo_list}}
   end
 
-  defp via_tuple(name) do
-    Todo.ProcessRegistry.via_tuple({__MODULE__, name})
+  def whereis(name) do
+    case :global.whereis_name({__MODULE__, name}) do
+      :undefined -> nil
+      pid -> pid
+    end
+  end
+
+  defp global_name(name) do
+    {:global, {__MODULE__, name}}
   end
 
   defp expiry_idle_timeout(), do: Application.fetch_env!(:todo, :todo_item_expiry)

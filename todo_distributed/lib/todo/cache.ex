@@ -8,15 +8,12 @@ defmodule Todo.Cache do
   end
 
   @doc """
-  No need to maintain state in a server process and call it -
-  Instead, state is in supervisor, child lookup there
+  Eliminate bottleneck - made more serious now that it's a global lock to try to register -
+  by performing a lookup first
   """
   @spec server_process(bitstring) :: any
   def server_process(todo_list_name) do
-    case start_child(todo_list_name) do
-      {:ok, pid} -> pid
-      {:error, {:already_started, pid}} -> pid
-    end
+    existing_process(todo_list_name) || new_process(todo_list_name)
   end
 
   def init(_) do
@@ -31,13 +28,17 @@ defmodule Todo.Cache do
     }
   end
 
-  defp start_child(name) do
-    # Pass the work to DynamicSupervisor
-    # These calls are serialized, so multiple calls for the same list will get the same server
-    # However, since they're serialized, this is a bottleneck
-    DynamicSupervisor.start_child(
+  defp existing_process(name) do
+    Todo.Server.whereis(name)
+  end
+
+  defp new_process(name) do
+    case DynamicSupervisor.start_child(
       __MODULE__,
       {Todo.Server, name}
-    )
+    ) do
+      {:ok, pid} -> pid
+      {:error, {:already_started, pid}} -> pid
+    end
   end
 end
