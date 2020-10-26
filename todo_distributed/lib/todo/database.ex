@@ -29,7 +29,24 @@ defmodule Todo.Database do
     )
   end
 
+  @doc """
+  Modify store to replicate storage globally, on each node.
+  This way, if a node goes down, data will have already been persisted on the others to resume from.
+  """
   def store(key, data) do
+    {_results, bad_nodes} =
+      :rpc.multicall(
+        __MODULE__,
+        :store_local,
+        [key, data],
+        :timer.seconds(5)
+      )
+
+      Enum.each(bad_nodes, &IO.puts("Store failed on node #{&1}"))
+      :ok
+  end
+
+  def store_local(key, data) do
     # Poolboy handles "checking out" a worker for this operation
     :poolboy.transaction(
       __MODULE__,
